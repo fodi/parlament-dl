@@ -32,7 +32,7 @@ public class ParlamentDL
         simpleDateFormatter.setLenient(false);
 
         Date date = null;
-        
+
         try
         {
             date = simpleDateFormatter.parse(dateToParse);
@@ -49,8 +49,8 @@ public class ParlamentDL
     public static void main(String[] args)
     {
         Date date = null;
-        String videoDateTitle = null;
-        String videoDateURL = null, videoPlayerURL = null, videoPlaylistURL = null, videoChunklistURL = null, videoChunklistRootURL = null;
+        //String videoDateTitle = null;
+        String /*videoDateURL = null,*/ videoPlayerURL = null, videoPlaylistURL = null, videoChunklistURL = null, videoChunklistRootURL = null;
         String videoPlaylistContent = null;
         String[] videoChunklistContent = null;
         List<String> videoChunkURLs = new ArrayList<String>();
@@ -80,8 +80,26 @@ public class ParlamentDL
             Document doc = Jsoup.connect("http://www.parlament.hu/videoarchivum").userAgent(DEFAULT_USER_AGENT).get();
             System.out.println("INFO: Successfully downloaded video archive page.");
 
-            Elements elements = doc.select("table tr td:first-child a");
+            if (date != null)
+            {
+                simpleDateFormatter = new SimpleDateFormat("yyyy.MM.dd.");
+            }
 
+            for (Element row : doc.select("table tr")) // iterate through table rows
+            {
+                if (row.select("td:first-of-type").text().startsWith(simpleDateFormatter.format(date))) // check if right date is in first column
+                {
+                    for (Element link : row.select("td a")) // iterate through links in row
+                    {
+                        if (link.absUrl("href").startsWith("http://sgis.parlament.hu/archive/playseq.php")) // check if link is a player link
+                        {
+                            videoPlayerURL = link.absUrl("href");
+                            System.out.println("INFO: Video player page URL: " + videoPlayerURL);
+                        }
+                    }
+                }
+            }
+            /*
             if (date != null)
             {
                 simpleDateFormatter = new SimpleDateFormat("yyyy.MM.dd.");
@@ -100,6 +118,7 @@ public class ParlamentDL
             }
             System.out.format("INFO: Video archive date: %s\n", videoDateTitle);
             System.out.format("INFO: Video archive date URL: %s\n", videoDateURL);
+             */
         } catch (IOException ex)
         {
             System.err.println("ERROR: Unable to download video archive page: " + ex.toString());
@@ -108,6 +127,7 @@ public class ParlamentDL
         }
 
         // get video archive date page
+        /*
         try
         {
             System.out.println("INFO: Attempting to download video archive date page.");
@@ -138,7 +158,7 @@ public class ParlamentDL
             System.err.println("EXITING. Error code: -3");
             System.exit(-3);
         }
-
+         */
         // get video playlist
         try
         {
