@@ -4,10 +4,10 @@ import java.io.IOException;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
-import org.jsoup.select.Elements;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Calendar;
 import java.util.Date;
 import java.util.List;
 import org.jsoup.Connection.Response;
@@ -49,8 +49,7 @@ public class ParlamentDL
     public static void main(String[] args)
     {
         Date date = null;
-        //String videoDateTitle = null;
-        String /*videoDateURL = null,*/ videoPlayerURL = null, videoPlaylistURL = null, videoChunklistURL = null, videoChunklistRootURL = null;
+        String videoPlayerURL = null, videoPlaylistURL = null, videoChunklistURL = null, videoChunklistRootURL = null;
         String videoPlaylistContent = null;
         String[] videoChunklistContent = null;
         List<String> videoChunkURLs = new ArrayList<String>();
@@ -70,7 +69,8 @@ public class ParlamentDL
             }
         } else
         {
-            System.out.println("INFO: Date stamp argument not specified, the latest video will be downloaded from the archive.");
+            date = Calendar.getInstance().getTime();
+            System.out.println("INFO: Date stamp argument not specified, today's date will be used: " + simpleDateFormatter.format(date));
         }
 
         // get video archive page
@@ -80,10 +80,7 @@ public class ParlamentDL
             Document doc = Jsoup.connect("http://www.parlament.hu/videoarchivum").userAgent(DEFAULT_USER_AGENT).get();
             System.out.println("INFO: Successfully downloaded video archive page.");
 
-            if (date != null)
-            {
-                simpleDateFormatter = new SimpleDateFormat("yyyy.MM.dd.");
-            }
+            simpleDateFormatter = new SimpleDateFormat("yyyy.MM.dd.");
 
             for (Element row : doc.select("table tr")) // iterate through table rows
             {
@@ -99,26 +96,7 @@ public class ParlamentDL
                     }
                 }
             }
-            /*
-            if (date != null)
-            {
-                simpleDateFormatter = new SimpleDateFormat("yyyy.MM.dd.");
-                for (Element element : elements)
-                {
-                    if (element.text().startsWith(simpleDateFormatter.format(date)))
-                    {
-                        videoDateTitle = element.text();
-                        videoDateURL = element.absUrl("href");
-                    }
-                }
-            } else
-            {
-                videoDateTitle = elements.first().text();
-                videoDateURL = elements.first().absUrl("href");
-            }
-            System.out.format("INFO: Video archive date: %s\n", videoDateTitle);
-            System.out.format("INFO: Video archive date URL: %s\n", videoDateURL);
-             */
+
         } catch (IOException ex)
         {
             System.err.println("ERROR: Unable to download video archive page: " + ex.toString());
@@ -126,39 +104,13 @@ public class ParlamentDL
             System.exit(-2);
         }
 
-        // get video archive date page
-        /*
-        try
+        if (videoPlayerURL == null)
         {
-            System.out.println("INFO: Attempting to download video archive date page.");
-            Document doc = Jsoup.connect(videoDateURL).userAgent(DEFAULT_USER_AGENT).get();
-            System.out.println("INFO: Successfully downloaded video archive date page.");
-
-            Elements elements = doc.select("table a");
-
-            for (Element element : elements)
-            {
-                if (videoPlayerURL == null && element.absUrl("href").startsWith("http://sgis.parlament.hu/archive/playseq.php"))
-                {
-                    videoPlayerURL = element.absUrl("href");
-                    System.out.println("INFO: Video player page URL: " + videoPlayerURL);
-                    System.out.println("INFO: Expected video length: " + element.text());
-                }
-            }
-
-            if (videoPlayerURL == null)
-            {
-                System.err.println("ERROR: Unable to retrieve video player page URL.");
-                System.err.println("EXITING. Error code: -4");
-                System.exit(-4);
-            }
-        } catch (IOException ex)
-        {
-            System.err.println("ERROR: Unable to download video archive date page: " + ex.toString());
+            System.err.println("ERROR: Unable to find video for date.");
             System.err.println("EXITING. Error code: -3");
             System.exit(-3);
         }
-         */
+
         // get video playlist
         try
         {
@@ -195,12 +147,12 @@ public class ParlamentDL
 
             videoChunklistContent = doc.wholeText().split("\n");
 
-            for (String videoChunklistContent1 : videoChunklistContent)
+            for (String videoChunklistContentLine : videoChunklistContent)
             {
-                if (videoChunklistContent1.endsWith(".ts"))
+                if (videoChunklistContentLine.endsWith(".ts"))
                 {
-                    System.out.println(videoChunklistRootURL + videoChunklistContent1);
-                    videoChunkURLs.add(videoChunklistRootURL + videoChunklistContent1);
+                    System.out.println(videoChunklistRootURL + videoChunklistContentLine);
+                    videoChunkURLs.add(videoChunklistRootURL + videoChunklistContentLine);
                 }
             }
 
