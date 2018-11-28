@@ -21,6 +21,7 @@ public class ParlamentDL
 
     public static final String DEFAULT_USER_AGENT = "Mozilla/5.0 (iPhone; CPU iPhone OS 11_0 like Mac OS X) AppleWebKit/604.1.38 (KHTML, like Gecko) Version/11.0 Mobile/15A372 Safari/604.1";
     public static SimpleDateFormat simpleDateFormatter = new SimpleDateFormat("yyyy-MM-dd");
+    public static String defaultRequestedVideoResolution = "1280x720";
 
     public static Date parseDateStamp(String dateToParse)
     {
@@ -125,17 +126,28 @@ public class ParlamentDL
             videoPlaylistContent = doc.wholeText();
             videoChunklistRootURL = videoPlaylistURL.substring(0, videoPlaylistURL.lastIndexOf('/') + 1);
 
-            // construct video chunklist URL for 720p stream
-            videoChunklistURL = videoPlaylistContent.substring(videoPlaylistContent.indexOf("RESOLUTION=1280x720") + 20);
-            videoChunklistURL = videoChunklistURL.substring(0, videoChunklistURL.indexOf(".m3u8") + 5);
-            videoChunklistURL = videoChunklistRootURL + videoChunklistURL;
-            System.out.println("INFO: Video chunklist URL: " + videoChunklistURL);
+            String requestedVideoResolution = (args.length > 1 ? args[1] : defaultRequestedVideoResolution);
 
+            // construct video chunklist URL for requested resolution stream
+            if (videoPlaylistContent.indexOf("RESOLUTION=" + requestedVideoResolution) > 0)
+            {
+                videoChunklistURL = videoPlaylistContent.substring(videoPlaylistContent.indexOf("RESOLUTION=" + requestedVideoResolution) + (12 + requestedVideoResolution.length()));
+                videoChunklistURL = videoChunklistURL.substring(0, videoChunklistURL.indexOf(".m3u8") + 5);
+                videoChunklistURL = videoChunklistRootURL + videoChunklistURL;
+                System.out.println("INFO: Video chunklist URL: " + videoChunklistURL);
+            }
         } catch (IOException ex)
         {
             System.err.println("ERROR: Unable to download video playlist: " + ex.toString());
             System.err.println("EXITING. Error code: -5");
             System.exit(-5);
+        }
+
+        if (videoChunklistURL == null)
+        {
+            System.err.println("ERROR: Video playlist does not contain a chunklist for the requested video resolution (" + defaultRequestedVideoResolution + ").");
+            System.err.println("EXITING. Error code: -6");
+            System.exit(-6);
         }
 
         // get video chunklist
@@ -159,8 +171,8 @@ public class ParlamentDL
         } catch (IOException ex)
         {
             System.err.println("ERROR: Unable to download video chunklist: " + ex.toString());
-            System.err.println("EXITING. Error code: -6");
-            System.exit(-6);
+            System.err.println("EXITING. Error code: -7");
+            System.exit(-7);
         }
     }
 }
